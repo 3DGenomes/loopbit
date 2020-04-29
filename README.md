@@ -17,7 +17,7 @@ This add-on of TADbit allows you to run `Loopbit`, a Convolutional Neural Networ
 
 # Requirements
 Loopbit was written and tested using Python 3.6, 3.7.
-It requires the packages `matplotlib` (3.2.1), `scipy` (1.0.0), `numpy` (1.14.0), `pandas` (0.22.0), `tensorflow` (1.10.0), `functools` (3.2.3), `multiprocess`(0.70.9) and `seaborn` (0.9.0) and `tqdm` (4.32.2).
+It requires the packages `matplotlib` (3.2.1), `scipy` (1.0.0), `numpy` (1.14.5), `tensorflow` (1.10.0), and `seaborn` (0.9.0) and `tqdm` (4.32.2).
 
 # Installation
 
