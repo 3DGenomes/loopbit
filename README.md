@@ -38,6 +38,12 @@ Use `loopbit -h` for quick help and orientation.
 
 ## Plot the results
 
+# Usage
+Loopbit has these two main commands: 
+* `scan` to scan the region of interest or the full chromosome to obtain the loop prediction.
+* `plot` to generate a plot of a region of interest with the contact matrix and the cloud of probabilities.
+
+
 Frequently asked questions
 --------------------------
 
