@@ -55,7 +55,7 @@ It will generate a output file with 2 columns, with a label and its probability 
 
 ## Plot the results
 In order to visualize the results we will run the following command-line:
-<img src="https://github.com/3DGenomes/loopbit/blob/master/loopbit_33379694_34327701_region.png" height= "225" width="500" align="center">
+<img src="https://github.com/3DGenomes/loopbit/blob/master/loopbit_33379694_34327701_region.png" height= "500" width="500" align="center">
 
 
 # Usage
