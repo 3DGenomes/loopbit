@@ -99,7 +99,7 @@ This function allows to observe the results from a region of interest.
 * Resolution of the experiment to inspect, in bp.
 * Directory to store the results.
 
-<NOTE: there is the parameter -G or gaussian that can be changed if needed. By default is 4. Here you can learn more about how this filter works: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.gaussian_filter.html>
+<NOTE: there is the parameter -G or gaussian that can be changed if needed. By default is 4. Here you can learn more about how this filter works: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.gaussian_filter.html >
 
 Frequently asked questions
 --------------------------
