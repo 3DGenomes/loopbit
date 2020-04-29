@@ -1,0 +1,345 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import argparse
+import textwrap
+
+import logging
+
+logger = logging.getLogger('')
+
+
+class Loopbit(object):
+
+    def __init__(self):
+        parser = loopbit_parser()
+
+        flag_increments = {
+            '-l': 2, '--log-file': 2,
+        }
+
+        option_ix = 1
+        while (option_ix < len(sys.argv) and
+               sys.argv[option_ix].startswith('-')):
+            if sys.argv[option_ix] in flag_increments:
+                option_ix += flag_increments[sys.argv[option_ix]]
+            else:
+                option_ix += 1
+
+        # parse_args defaults to [1:] for args, but you need to
+        # exclude the rest of the args too, or validation will fail
+        args = parser.parse_args(sys.argv[1:option_ix + 1])
+
+        # configure logger
+        if args.verbosity == 1:
+            log_level = logging.WARN
+        elif args.verbosity == 2:
+            log_level = logging.INFO
+        elif args.verbosity > 2:
+            log_level = logging.DEBUG
+        else:
+            log_level = logging.INFO
+        logger.setLevel(log_level)
+
+        if args.log_file is None:
+            sh = logging.StreamHandler()
+            sh_formatter = logging.Formatter(
+                "%(asctime)s %(levelname)s %(message)s")
+            sh.setFormatter(sh_formatter)
+            sh.setLevel(log_level)
+            logger.addHandler(sh)
+        else:
+            log_file = os.path.expanduser(args.log_file)
+            fh = logging.FileHandler(log_file, mode='a')
+            formatter = logging.Formatter(
+                "%(asctime)s %(levelname)s %(message)s")
+            fh.setFormatter(formatter)
+            fh.setLevel(log_level)
+            logger.addHandler(fh)
+
+        # get version info
+        if args.print_version:
+            import loopbit
+            print(loopbit.__version__)
+            exit()
+
+        if args.command is None or not hasattr(self, args.command):
+            print('Unrecognized command')
+            parser.print_help()
+            exit(1)
+
+        # echo parameters back to user
+        command = " ".join(sys.argv)
+        logger.info("Running '{}'".format(command))
+
+        # use dispatch pattern to invoke method with same name
+        getattr(self, args.command)([sys.argv[0]] + sys.argv[option_ix:])
+
+        # echo parameters back to user
+        logger.info("Finished '{}'".format(" ".join(sys.argv)))
+
+    def scan(self, argv):
+        parser = MyParser(
+            description='''
+            Scan a tab-separated file,containing the contact information in order to retrive the loop probability value.''',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+        parser.add_argument(
+            'matrix',
+            type=str,
+            help='''TSV file of the 3C-experiment with <bin_i>\t<bin_j>\t<interaction>\n''')
+
+        parser.add_argument(
+            'chromosome',
+            type=str,
+            help='''chromosome to scan.''')
+
+        parser.add_argument(
+            'interval',
+            type=str, metavar="INT-INT",
+            help='''Interval of distance to scan, from start-end''')
+
+        parser.add_argument(
+            'resolution',
+            type=int,
+            help='''Resolution of the experiment (bp).''')
+
+        parser.add_argument(
+            'size',
+            type=int,
+            help='''Number of bins considered to check if contains a loop. Recommended to have around 9 bins, 
+            no less than 3''')
+
+        parser.add_argument(
+            'step',
+            type=int,
+            help='''Step size to scan, if 1 will scan all the chromosome moving +1 bin each time''')
+
+        parser.add_argument(
+            'outdir',
+            type=str,
+            help='''Directory to store the results.''')
+
+        args = parser.parse_args(argv[2:])
+
+        from loopbit.scan import scan_chromosome
+        import tensorflow as tf
+        import pandas as pd
+        from collections import defaultdict
+
+        matrix = args.matrix
+        resolution = args.resolution
+        outdir = args.outdir
+        chromosome = args.chromosome
+        resolution = args.resolution
+        interval = args.interval
+        size = args.size
+        step = args.step
+
+        logger.debug('[MAIN]: Parameters:')
+        logger.debug(args)
+
+        min_dist, max_dist = map(int, interval.split('-'))
+        min_dist_reso = int(min_dist / resolution)
+        max_dist_reso = int(max_dist / resolution)
+
+
+        # Load model
+        MNAME = "loopbit/loop_model"
+        # load json and create model
+        json_file = open(MNAME + '.json', 'r')
+        model_json = json_file.read()
+        json_file.close()
+        model = tf.keras.models.model_from_json(model_json)
+        # load weights into new model
+        model.load_weights(MNAME + ".h5")
+        logger.info("[MAIN]: Loaded model from disk")
+
+        logger.info("[MAIN]: Analyzing %s..."%(chromosome))
+
+        ints = pd.read_csv(matrix, header=None, sep="\t")
+        logger.info("[MAIN]: Getting min/max for %s"%(chromosome))
+
+        start_bin = min(ints[0].min(), ints[1].min())
+        end_bin = max(ints[0].max(), ints[1].max())
+
+        mat_dict = defaultdict(float)
+        logger.info("[MAIN]: Loading TSV experiment...")
+        with open(matrix, 'r') as r:
+            for line in r:
+                b1, b2, norm = line.split()
+                mat_dict[(int(b1), int(b2))] = float(norm)
+
+        res = scan_chromosome(min_dist_reso, max_dist_reso, chromosome, mat_dict, size, step, start_bin, end_bin, model)
+        # save all results
+        logger.info("[MAIN]: Saving results...")
+
+        w = open(outdir+'/loopbit_results_%s.tsv' % (chromosome), 'w+')
+        w.write('{}\t{}\n'.format('Label', 'Prob.Loop'))
+        for x in res:
+            label = x[0]
+            l, no = x[1][0]
+            w.write('{}\t{}\n'.format(label, l))
+        w.close()
+
+
+    def plot(self, argv):
+        parser = MyParser(
+            description='''
+                    Plot figure from region of interest, to show the contact matrix and the probabilities cloud.''',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+        parser.add_argument(
+            'matrix',
+            type=str,
+            help='''TSV file of the 3C-experiment with <bin_i>\t<bin_j>\t<interaction>\n''')
+
+        parser.add_argument(
+            'loopbit_file',
+            type=str,
+            help='''Output from loopbit.''')
+
+        parser.add_argument(
+            'interval_region',
+            type=str, metavar="INT-INT",
+            help='''Region of interest to plot start-end''')
+
+        parser.add_argument(
+            'resolution',
+            type=int,
+            help='''Resolution of the experiment (bp).''')
+
+        parser.add_argument(
+            'outdir',
+            type=str,
+            help='''Directory to store the results.''')
+
+        parser.add_argument(
+            '-G', dest='gaussian', default=4.,required=False,
+            type=float,
+            help='''Value to compute the gaussian filter. By default is 4.''')
+        args = parser.parse_args(argv[2:])
+
+        from collections import defaultdict
+        import numpy as np
+        import pandas as pd
+        from loopbit.plot import contour_90deg_thresh, pcolormesh_45deg
+        import matplotlib
+        matplotlib.use('agg')
+        import matplotlib.pyplot as plt
+
+        matrix = args.matrix
+        loopbit_file = args.loopbit_file
+        interval_region = args.interval_region
+        resolution = args.resolution
+        outdir = args.outdir
+        gaussian = args.gaussian
+
+
+        # load only ROI
+        start_position, end_position = map(int, interval_region.split('-'))
+        start_ROI = int(start_position / resolution)
+        end_ROI = int(end_position / resolution)
+        size_array = end_ROI - start_ROI
+
+        hic_array = np.zeros((size_array+1, size_array+1))
+        with open(matrix, 'r') as r:
+            for line in r:
+                b1, b2, norm = line.split()
+                if int(b1) >= start_ROI and int(b2) <= end_ROI:
+                    hic_array[int(b1)-start_ROI, int(b2) - end_ROI] = float(norm)
+                    hic_array[int(b2)- end_ROI, int(b1)-start_ROI] = float(norm)
+
+
+        # load loop array
+        features_dict = defaultdict(float)
+
+        CATEGORIES = ["loop", "nothing"]
+        with open(loopbit_file, 'r')as r:
+            r.__next__()
+            for line in r:
+                label, loop = line.split()
+                vals = np.asanyarray([float(loop), 1 - float(loop)])
+                category = CATEGORIES[np.argmax(vals)]
+                if (np.equal(np.argmax(np.round(vals)), np.argmax(vals))) == True and category == 'loop':
+                    proportion = int(np.round(np.max(vals) * 10))
+                    features_dict[label] = proportion
+
+        loop_array = np.zeros((size_array, size_array))
+
+        for l in features_dict:
+            _, s, e = l.split('_')
+            if int(s) >= start_ROI and int(e) <= end_ROI:
+                loop_array[int(s)-start_ROI, int(e)-start_ROI] += features_dict[l]
+                loop_array[int(e)-start_ROI, int(s)-start_ROI] += features_dict[l]
+
+        fig = plt.figure(figsize=(10, 10))
+        axe1 = plt.subplot(211)
+        im1 = pcolormesh_45deg(hic_array, axe=axe1, vmin=0., vmax=np.max(hic_array) - 1)
+        axe1.set_ylim(0, len(hic_array))
+        axe2 = plt.subplot(212)
+
+        im2 = contour_90deg_thresh(loop_array, axe=axe2, gaussian=4.)
+
+        axe2.set_ylim(0, len(hic_array))
+        axe2.invert_yaxis()
+        plt.subplots_adjust(wspace=0, hspace=0)
+        plt.savefig(outdir + 'loopbit_%s_%s_region.png' % (str(start_position), str(end_position)), dpi=500, bbox_inches = 'tight', pad_inches = 0)
+        plt.close()
+
+
+
+def loopbit_parser():
+    usage = '''\
+        loopbit <command> [options]
+
+        Commands:
+            scan             Scan whole chromosome or region of interest to get probabilities of being a loop.
+            plot           To plot the contact map and the cloud of probabilities from a specific region of interest.
+
+        Run loopbit <command> -h for help on a specific command.
+        '''
+    parser = argparse.ArgumentParser(
+        description="""
+        loopbit: Convolutional neural network trained to identify loops.""",
+        usage=textwrap.dedent(usage)
+    )
+
+    parser.add_argument(
+        '--version', dest='print_version',
+        action='store_true',
+        help='''Print version information'''
+    )
+    parser.set_defaults(print_version=False)
+
+    parser.add_argument(
+        '--verbose', '-v', dest='verbosity',
+        action='count',
+        default=0,
+        help='''Set verbosity level: Can be chained like
+        '-vvv' to increase verbosity. Default is to show
+        errors, warnings, and info messages (same as '-vv').
+        '-v' shows only errors and warnings, '-vvv' shows errors, warnings,
+        info, and debug messages in addition.'''
+    )
+
+    parser.add_argument(
+        '-l', '--log-file', dest='log_file',
+        help='''Path to file in which to save log.'''
+    )
+
+    parser.add_argument('command', nargs='?', help='Subcommand to run')
+
+    return parser
+
+
+class MyParser(argparse.ArgumentParser):
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % message)
+        self.print_help()
+        sys.exit(2)
+
+
+if __name__ == '__main__':
+    Loopbit()
