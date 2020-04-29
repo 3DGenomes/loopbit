@@ -45,7 +45,7 @@ chr21 \
 5000 \
 9 \
 3 \
-example \
+example/ \
 ```
 It will generate a output file with 2 columns, with a label and its probability of being a loop. The label will be <chromosome_binI_binJ>:
 
@@ -55,14 +55,51 @@ It will generate a output file with 2 columns, with a label and its probability 
 
 ## Plot the results
 In order to visualize the results we will run the following command-line:
-<img src="https://github.com/3DGenomes/loopbit/blob/master/loopbit_33379694_34327701_region.png" height= "500" width="500" align="center">
 
+```bash
+loopbit plot \
+example/chr21_GM12878_replicateH.tsv \
+example/loopbit_results_chr21.tsv \
+33379694-34327701\
+5000\
+example/ \
+```
+This is the plot that will be displayed, containing the contact information in the upper triangle, and the probabilities cloud in the lower triangle:
+
+<img src="https://github.com/3DGenomes/loopbit/blob/master/loopbit_33379694_34327701_region.png" height= "500" width="500" align="center">
 
 # Usage
 Loopbit has these two main commands: 
 * `scan` to scan the region of interest or the full chromosome to obtain the loop prediction.
 * `plot` to generate a plot of a region of interest with the contact matrix and the cloud of probabilities.
 
+## scan
+First, the region of interest or the full chromosome have to be scanned, thus obtaining the loop prediction value. To run `scan`, the following arguments are needed:
+
+* A normalized Hi-C matrix file in a TSV format. 
+  This should be tab-delimited, where each line has three columns:
+  \<row index\> \<column index\> \<value\>
+
+* The name of the chromosome or a specific label to use to store results.
+* Interval of distance to check the presence of chromatin loops (bp). For example, if we want to inspect from 45kb to 3Mb, we will put 45000-3000000.
+* Resolution of the experiment to inspect, in bp.
+* Number of bins considered to check if contains a loop. For example, if we put 9, submatrices of 9x9 will be used to check if contains a loop.
+
+<NOTE: Recommended to have around 9 bins, no less than 3>
+* Step size to scan, if 1, it will scan all the chromosome moving +1bin each time
+* Directory to store the results.
+
+## plot
+This function allows to observe the results from a region of interest.
+* A normalized Hi-C matrix file in a TSV format. 
+  This should be tab-delimited, where each line has three columns:
+  \<row index\> \<column index\> \<value\>
+* The outplut file from loopbit.
+* Region of interest to be plotted with the following format, in bp: start-end.
+* Resolution of the experiment to inspect, in bp.
+* Directory to store the results.
+
+<NOTE: there is the parameter -G or gaussian that can be changed if needed. By default is 4. Here you can learn more about how this filter works: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.gaussian_filter.html>
 
 Frequently asked questions
 --------------------------
