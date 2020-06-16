@@ -31,7 +31,7 @@ setup(
         'tensorflow',
         'seaborn',
         'keras',
-        'numpy==1.14.5',
+        'numpy>1.14.5',
         'matplotlib',
         'scipy',
         'pandas',
