@@ -35,7 +35,7 @@ After the installation, you can run the provided example to familiarize with the
 Use `loopbit -h` for quick help and orientation.
 
 ## Scan region of interest or full chromosome
-For the tutorial we are going to use a region of the chromosome 21 from the replicate H of . We are going to analyze a 1 Mb region, from 33,379,000 to 34,379,000.
+For the tutorial we are going to use a region of the chromosome 21 from the replicate H of . We are going to analyze a 1 Mb region, from 33,379,694 to 34,327,701.
 
 ```bash
 loopbit scan \
@@ -60,7 +60,7 @@ In order to visualize the results we will run the following command-line:
 loopbit plot \
 example/chr21_GM12878_replicateH.tsv \
 example/loopbit_results_chr21.tsv \
-33379000-34379000 \
+33379694-34327701 \
 5000 \
 example/ \
 ```
