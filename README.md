@@ -60,7 +60,7 @@ In order to visualize the results we will run the following command-line:
 loopbit plot \
 example/chr21_GM12878_replicateH.tsv \
 example/loopbit_results_chr21.tsv \
-33379694-34327701\
+33379000-34379000\
 5000\
 example/ \
 ```
