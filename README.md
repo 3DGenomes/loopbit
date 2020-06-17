@@ -60,8 +60,8 @@ In order to visualize the results we will run the following command-line:
 loopbit plot \
 example/chr21_GM12878_replicateH.tsv \
 example/loopbit_results_chr21.tsv \
-33379000-34379000\
-5000\
+33379000-34379000 \
+5000 \
 example/ \
 ```
 This is the plot that will be displayed, containing the contact information in the upper triangle, and the probabilities cloud in the lower triangle:
