@@ -219,11 +219,15 @@ class Loopbit(object):
             '-G', dest='gaussian', default=4.,required=False,
             type=float,
             help='''Value to compute the gaussian filter. By default is 4.''')
+
+        parser.add_argument(
+            '-S', dest='superimpose', action='store_true', required=False,
+            help='''Superimpose loop prediction to matrix (default is side by side).''')
+
         args = parser.parse_args(argv[2:])
 
         from collections import defaultdict
         import numpy as np
-        import pandas as pd
         from loopbit.plot import contour_90deg_thresh, pcolormesh_45deg
         import matplotlib
         matplotlib.use('agg')
@@ -235,6 +239,7 @@ class Loopbit(object):
         resolution = args.resolution
         outdir = args.outdir
         gaussian = args.gaussian
+        superimpose = args.superimpose
 
 
         # load only ROI
@@ -278,12 +283,17 @@ class Loopbit(object):
         axe1 = plt.subplot(211)
         im1 = pcolormesh_45deg(hic_array, axe=axe1, vmin=0., vmax=np.max(hic_array) - 1)
         axe1.set_ylim(0, len(hic_array))
-        axe2 = plt.subplot(212)
+        if superimpose:
+            axe2 = axe1
+        else:
+            axe2 = plt.subplot(212)
 
-        im2 = contour_90deg_thresh(loop_array, axe=axe2, gaussian=4.)
+        im2 = contour_90deg_thresh(loop_array, axe=axe2, gaussian=gaussian,
+                                   superimpose=superimpose)
 
         axe2.set_ylim(0, len(hic_array))
-        axe2.invert_yaxis()
+        if not superimpose:
+            axe2.invert_yaxis()
         plt.subplots_adjust(wspace=0, hspace=0)
         plt.savefig(outdir + 'loopbit_%s_%s_region.png' % (str(start_position), str(end_position)), dpi=500, bbox_inches = 'tight', pad_inches = 0)
         plt.close()

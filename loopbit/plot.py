@@ -1,10 +1,11 @@
+
 from itertools import product
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 
-def contour_90deg_thresh(matrix, axe=None, gaussian=4., **kwargs):
+def contour_90deg_thresh(matrix, axe=None, gaussian=4., superimpose=False,
+                         **kwargs):
     """
     Draw triangular matrix
     """
@@ -24,10 +25,13 @@ def contour_90deg_thresh(matrix, axe=None, gaussian=4., **kwargs):
                         range(0, size , 1))]), rot)
 
     # plot
-    im = plt.contourf(A[:,1].reshape(size,size) - 0.5,
-                    A[:,0].reshape(size,size),np.flipud(gaussian_filter(matrix, gaussian)), 5,
-                                                       cmap='Reds', interpolation='none')
-    im.cmap.set_under('white')
+    contour = plt.contour if superimpose else plt.contourf
+    im = contour(A[:,1].reshape(size,size) - 0.5,
+                 A[:,0].reshape(size,size), np.flipud(gaussian_filter(matrix, gaussian)), 5,
+                 cmap='Reds', interpolation='none')
+
+    if not superimpose:
+        im.cmap.set_under('white')
     im.set_clim(0.1, 0.4)
     axe.spines['right'].set_visible(False)
     axe.spines['left'].set_visible(False)
