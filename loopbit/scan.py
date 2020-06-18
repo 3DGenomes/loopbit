@@ -13,12 +13,13 @@ def scan_chromosome(min_dist_reso, max_dist_reso, chromosome,
             if end2 > end_bin:
                 continue
             # midpoint of the matrix used as label
-            mean1, mean2 = (start1 + end1) // 2, (start2 + end2) // 2
-            label = '{}_{}_{}'.format(chromosome, mean1, mean2)
+            label = '{}_{:.0f}_{:.0f}'.format(chromosome,
+                                              (start1 + end1) // 2,
+                                              (start2 + end2) // 2 + 1)
             # extract submatrix from Hi-C, as a vector
-            matrix = [[[[bam_dict[(p1, p2)]] for p2 in range(start2, end2)]
-                       for p1 in range(start1, end1)]]
+            matrix = [[[bam_dict[(p1, p2)]] for p2 in range(start2, end2)]
+                      for p1 in range(start1, end1)]
             # predict if the matrix adjusts to the model
-            prediction = model.predict([matrix])
+            prediction = model.predict([[matrix]])
             res.append((label, prediction))
     return res
