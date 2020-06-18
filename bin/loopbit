@@ -82,7 +82,7 @@ class Loopbit(object):
     def scan(self, argv):
         parser = MyParser(
             description='''
-            Scan a tab-separated file,containing the contact information in order to retrive the loop probability value.''',
+            Scan a tab-separated file,containing the contact information in order to retrieve the loop probability value.''',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
         parser.add_argument(
@@ -108,7 +108,7 @@ class Loopbit(object):
         parser.add_argument(
             'size',
             type=int,
-            help='''Number of bins considered to check if contains a loop. Recommended to have around 9 bins, 
+            help='''Number of bins considered to check if contains a loop. Recommended to have around 9 bins,
             no less than 3''')
 
         parser.add_argument(
@@ -128,21 +128,21 @@ class Loopbit(object):
         import pandas as pd
         from collections import defaultdict
 
-        matrix = args.matrix
+        matrix     = args.matrix
         resolution = args.resolution
-        outdir = args.outdir
+        outdir     = args.outdir
         chromosome = args.chromosome
         resolution = args.resolution
-        interval = args.interval
-        size = args.size
-        step = args.step
+        interval   = args.interval
+        size       = args.size
+        step       = args.step
 
         logger.debug('[MAIN]: Parameters:')
         logger.debug(args)
 
         min_dist, max_dist = map(int, interval.split('-'))
-        min_dist_reso = int(min_dist / resolution)
-        max_dist_reso = int(max_dist / resolution)
+        min_dist_reso = min_dist // resolution
+        max_dist_reso = max_dist // resolution
 
 
         # Load model
@@ -171,7 +171,8 @@ class Loopbit(object):
                 b1, b2, norm = line.split()
                 mat_dict[(int(b1), int(b2))] = float(norm)
 
-        res = scan_chromosome(min_dist_reso, max_dist_reso, chromosome, mat_dict, size, step, start_bin, end_bin, model)
+        res = scan_chromosome(min_dist_reso, max_dist_reso, chromosome,
+                              mat_dict, size, step, start_bin, end_bin, model)
         # save all results
         logger.info("[MAIN]: Saving results...")
 
@@ -198,7 +199,7 @@ class Loopbit(object):
         parser.add_argument(
             'loopbit_file',
             type=str,
-            help='''Output from loopbit.''')
+            help='''Output from LOOPbit.''')
 
         parser.add_argument(
             'interval_region',
@@ -218,7 +219,17 @@ class Loopbit(object):
         parser.add_argument(
             '-G', dest='gaussian', default=4.,required=False,
             type=float,
-            help='''Value to compute the gaussian filter. By default is 4.''')
+            help='''[%(default)s] Value to compute the Gaussian filter.''')
+
+        parser.add_argument(
+            '-C', dest='cutoff', default=0.95,required=False,
+            type=float,
+            help='''[%(default)s] Cutoff above which to consider loop to be a loop
+            (0: everything is a loop; 0.99 conservative).''')
+
+        parser.add_argument(
+            '-P', dest='pinpoint', action='store_true', required=False,
+            help='''Draws a cross (colored by confidence) at the position of each loop''')
 
         parser.add_argument(
             '-S', dest='superimpose', action='store_true', required=False,
@@ -233,51 +244,54 @@ class Loopbit(object):
         matplotlib.use('agg')
         import matplotlib.pyplot as plt
 
-        matrix = args.matrix
-        loopbit_file = args.loopbit_file
+        matrix          = args.matrix
+        loopbit_file    = args.loopbit_file
         interval_region = args.interval_region
-        resolution = args.resolution
-        outdir = args.outdir
-        gaussian = args.gaussian
-        superimpose = args.superimpose
-
+        resolution      = args.resolution
+        outdir          = args.outdir
+        gaussian        = args.gaussian
+        superimpose     = args.superimpose
+        cutoff          = args.cutoff
+        pinpoint        = args.pinpoint
 
         # load only ROI
         start_position, end_position = map(int, interval_region.split('-'))
-        start_ROI = int(start_position / resolution)
-        end_ROI = int(end_position / resolution)
-        size_array = end_ROI - start_ROI
+        start_ROI = start_position // resolution
+        end_ROI = end_position // resolution
+        size_array = end_ROI - start_ROI + 1
 
-        hic_array = np.zeros((size_array+1, size_array+1))
+        hic_array = np.zeros((size_array, size_array))
         with open(matrix, 'r') as r:
             for line in r:
                 b1, b2, norm = line.split()
-                if int(b1) >= start_ROI and int(b2) <= end_ROI:
-                    hic_array[int(b1)-start_ROI, int(b2) - end_ROI] = float(norm)
-                    hic_array[int(b2)- end_ROI, int(b1)-start_ROI] = float(norm)
+                b1 = int(b1)
+                b2 = int(b2)
+                if b1 >= start_ROI and b2 <= end_ROI:
+                    hic_array[b1 - start_ROI, b2 -   end_ROI] = float(norm)
+                    hic_array[b2 -   end_ROI, b1 - start_ROI] = float(norm)
 
 
         # load loop array
         features_dict = defaultdict(float)
 
-        CATEGORIES = ["loop", "nothing"]
-        with open(loopbit_file, 'r')as r:
-            r.__next__()
+        with open(loopbit_file, 'r') as r:
+            next(r)
             for line in r:
                 label, loop = line.split()
-                vals = np.asanyarray([float(loop), 1 - float(loop)])
-                category = CATEGORIES[np.argmax(vals)]
-                if (np.equal(np.argmax(np.round(vals)), np.argmax(vals))) == True and category == 'loop':
-                    proportion = int(np.round(np.max(vals) * 10))
+                val = float(loop)
+                if val > cutoff:
+                    proportion = min(40, - np.log(1 - val)) / 4
                     features_dict[label] = proportion
 
         loop_array = np.zeros((size_array, size_array))
 
         for l in features_dict:
             _, s, e = l.split('_')
-            if int(s) >= start_ROI and int(e) <= end_ROI:
-                loop_array[int(s)-start_ROI, int(e)-start_ROI] += features_dict[l]
-                loop_array[int(e)-start_ROI, int(s)-start_ROI] += features_dict[l]
+            e = int(e)
+            s = int(s)
+            if s >= start_ROI and e <= end_ROI:
+                loop_array[s - start_ROI, e - start_ROI] += features_dict[l]
+                loop_array[e - start_ROI, s - start_ROI] += features_dict[l]
 
         fig = plt.figure(figsize=(10, 10))
         axe1 = plt.subplot(211)
@@ -289,7 +303,7 @@ class Loopbit(object):
             axe2 = plt.subplot(212)
 
         im2 = contour_90deg_thresh(loop_array, axe=axe2, gaussian=gaussian,
-                                   superimpose=superimpose)
+                                   superimpose=superimpose, pin_point_loops=pinpoint)
 
         axe2.set_ylim(0, len(hic_array))
         if not superimpose:
@@ -308,11 +322,11 @@ def loopbit_parser():
             scan             Scan whole chromosome or region of interest to get probabilities of being a loop.
             plot           To plot the contact map and the cloud of probabilities from a specific region of interest.
 
-        Run loopbit <command> -h for help on a specific command.
+        Run LOOPbit <command> -h for help on a specific command.
         '''
     parser = argparse.ArgumentParser(
         description="""
-        loopbit: Convolutional neural network trained to identify loops.""",
+        LOOPbit: Convolutional neural network trained to identify loops.""",
         usage=textwrap.dedent(usage)
     )
 
