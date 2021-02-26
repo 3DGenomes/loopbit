@@ -47,7 +47,7 @@ chr21 \
 3 \
 example/ \
 ```
-It will generate a output file with 2 columns, with a label and its probability of being a loop. The label will be <chromosome_binI_binJ>:
+It will generate a output file with 2 columns, with a label and its probability of being a loop. The label will be `chromosome_binI_binJ`:
 
 *chr21_562183_562202	1.7374185596594756e-19*
 
@@ -78,14 +78,16 @@ First, the region of interest or the full chromosome have to be scanned, thus ob
 
 * A normalized Hi-C matrix file in a TSV format. 
   This should be tab-delimited, where each line has three columns:
-  \<row index\> \<column index\> \<value\>
+```
+  row index    column index    value
+```
 
 * The name of the chromosome or a specific label to use to store results.
 * Interval of distance to check the presence of chromatin loops (bp). For example, if we want to inspect from 45kb to 3Mb, we will put 45000-3000000.
 * Resolution of the experiment to inspect, in bp.
 * Number of bins considered to check if contains a loop. For example, if we put 9, submatrices of 9x9 will be used to check if contains a loop.
 
-<NOTE: Recommended to have around 9 bins, no less than 3>
+*NOTE: Recommended to have around 9 bins, no less than 3*
 * Step size to scan, if 1, it will scan all the chromosome moving +1bin each time
 * Directory to store the results.
 
@@ -93,23 +95,25 @@ First, the region of interest or the full chromosome have to be scanned, thus ob
 This function allows to observe the results from a region of interest.
 * A normalized Hi-C matrix file in a TSV format. 
   This should be tab-delimited, where each line has three columns:
-  \<row index\> \<column index\> \<value\>
+```
+  row index    column index    value
+```
 * The outplut file from loopbit.
 * Region of interest to be plotted with the following format, in bp: start-end.
 * Resolution of the experiment to inspect, in bp.
 * Directory to store the results.
 
-<NOTE: there is the parameter -G or gaussian that can be changed if needed. By default is 4. Here you can learn more about how this filter works: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.gaussian_filter.html >
+*NOTE: there is the parameter -G or gaussian that can be changed if needed. By default is 4. Here you can learn more about how this filter works: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.gaussian_filter.html*
 
 Frequently asked questions
 --------------------------
 
-Check the label `FAQ <https://github.com/3DGenomes/TADbit/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3AFAQ+>`_ in TADbit issues.
+Check the label [FAQ](https://github.com/3DGenomes/TADbit/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3AFAQ+) in TADbit issues.
 
 If your question is still unanswered feel free to open a new issue.
 
 # Contributors
-This add-on of TADbit is currently developed at the  `MarciusLab <http://www.marciuslab.org>`_ with the contributions of Silvia Galan and François Serra.
+This add-on of TADbit is currently developed at the  [MarciusLab](http://www.marciuslab.org) with the contributions of Silvia Galan and François Serra.
 
 # Citation
 Please, cite this article if you use TADbit.
