@@ -1,4 +1,4 @@
-<img src="https://github.com/3DGenomes/loopbit/blob/master/loopbit_logo.png" height= "225" width="500" align="center">
+<img src="https://github.com/3DGenomes/loopbit/blob/master/media/loopbit_logo.png" height= "225" width="500" align="center">
 
 This add-on of TADbit allows you to run `Loopbit`, a Convolutional Neural Network (CNN) able to identify chromatin loops from 3C-based experiments [CITE PAPER].
 
@@ -66,7 +66,7 @@ example/ \
 ```
 This is the plot that will be displayed, containing the contact information in the upper triangle, and the probabilities cloud in the lower triangle:
 
-<img src="https://github.com/3DGenomes/loopbit/blob/master/loopbit_33379694_34327701_region.png" height= "500" width="500" align="center">
+<img src="https://github.com/3DGenomes/loopbit/blob/master/media/loopbit_33379694_34327701_region.png" height= "500" width="500" align="center">
 
 # Usage
 Loopbit has these two main commands: 
