@@ -146,19 +146,21 @@ class Loopbit(object):
 
 
         # Load model
-        MNAME = "loopbit/loop_model"
+        MNAME = "loop_model"
         # load json and create model
-        json_file = open(MNAME + '.json', 'r')
+        MODEL_PATH =  __file__
+        MODEL_PATH = os.path.join(os.path.split(os.path.split(os.path.split(MODEL_PATH)[0])[0])[0], 'models')
+        json_file = open(os.path.join(MODEL_PATH, MNAME + '.json'), 'r')
         model_json = json_file.read()
         json_file.close()
         model = tf.keras.models.model_from_json(model_json)
         # load weights into new model
-        model.load_weights(MNAME + ".h5")
+        model.load_weights(os.path.join(MODEL_PATH, MNAME + ".h5"))
         logger.info("[MAIN]: Loaded model from disk")
 
         logger.info("[MAIN]: Analyzing %s..."%(chromosome))
 
-        ints = pd.read_csv(matrix, header=None, sep="\t")
+        ints = pd.read_csv(matrix, header=None, comment='#', sep="\t")
         logger.info("[MAIN]: Getting min/max for %s"%(chromosome))
 
         start_bin = min(ints[0].min(), ints[1].min())

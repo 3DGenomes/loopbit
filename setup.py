@@ -25,7 +25,10 @@ setup(
     setup_requires=[
         'setuptools>=18.0',
     ],
-    packages=find_packages(),
+    packages=find_packages() + ['models'],
+    include_package_data=True,
+    package_dir={'models': 'models'},
+    package_data={'models': ['*.json', '*.h5']},
     install_requires=[
         'cython',
         'tensorflow',
@@ -36,6 +39,7 @@ setup(
         'scipy',
         'pandas',
     ],
+    zip_safe= False,
     scripts=['bin/loopbit'],
     cmdclass={
         'clean': CleanCommand
